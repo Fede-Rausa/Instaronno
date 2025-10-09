@@ -1,0 +1,13 @@
+instagrapi
+pandas
+numpy
+scipy
+streamlit
+networkx
+pyvis
+plotly
+requests
+tqdm
+notebook
+ipykernel
+
