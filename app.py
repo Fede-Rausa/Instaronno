@@ -93,6 +93,8 @@ def iterated_degree_voting_normalized(users_list, main_users, friends_list, iter
     return scores
 
 
+st.set_page_config(page_icon = 'instaronno_logo.ico')
+st.logo('instaronno_logo.ico', size = 'large')
 
 
 # --- Load data ---
@@ -886,15 +888,39 @@ if its endpoints C and D have no friends in common.
 Very importantly, an edge that is a bridge is also a local bridge.
 ''')
     #scale_nodes = st.checkbox('scale nodes by degree', False)
-    scale_nodes = st.selectbox('nodes scaling method',
-    ['node size all equal', 'scale nodes by degree', 'scale nodes by voting degree'])
+    scale_nodes = st.selectbox('scale nodes by',
+    ['fixed size', 'degree', 'ivnd score', 'betweenness centrality', 'closeness centrality', 'eigenvector centrality'],
+help=f'''
+Scaling nodes mode.
+Except for fixed size, all the others are centrality measures.
+specifically:
+- degree is the number of edges of each node
 
-    if scale_nodes == 'node size all equal':
+- betweenness, closeness, and eigenvector centrality
+are other centrality measures, which math is described
+in [networkx docs](https://networkx.org/documentation/stable/reference/algorithms/centrality.html)
+
+- ivnd score is a measure that I invented :)
+It stays for 'iterated voting normalized degree'.
+
+The algorithm starts with all the nodes scores equal to 1.
+
+For a given number of iterations (default 3), to the score of each node
+are added all the normalized scores of its neighbours (divided by total).
+
+Notes that at the first iteration the ivnd coincides with the degree.
+Empirical results show that this algorithm converges
+for medium size graph just at the third iteration.
+
+
+''')
+
+    if scale_nodes == 'fixed size':
         node_size = st.slider("Node size", 1, 50, 20, 1)
-    else:
-        scale_degree = st.slider("degree scaling factor", 0.01, 20.0, 1.0, 0.01)
+
+    scale_factor = st.slider("scaling factor", 1, 500, 100, 1)
     
-    voting_iterations = st.slider("degree voting iterations", 1, 20, 3, 1)
+    voting_iterations = st.slider("ivnd iterations", 1, 20, 3, 1)
     
     nodes_shape = st.selectbox('Nodes Shape:', ['dot', 'text', 'circle', 'box', 'ellipse', 'diamond',  'triangle', 'triangleDown', 'square', 'star', 'database'])
     user_A_color = st.color_picker("Main users color", "#DF8404")
@@ -915,7 +941,9 @@ Very importantly, an edge that is a bridge is also a local bridge.
 ############################ node labels settings
 
 
-st.sidebar.header('Show in node\'s label: ',
+with st.sidebar:
+
+    st.header('Show in node\'s label: ',
 help = """
 Choose the info to show in the nodes labels.
 Almost all the info, except for username, are available only
@@ -923,18 +951,26 @@ for users labeled as main users or interesting users
 (default orange and purple nodes).
 """)
 
-show_degree = st.sidebar.checkbox('show nodes degree', True)
-show_gb = st.sidebar.checkbox('show nodes global degree', True)
-show_iterated_degree = st.sidebar.checkbox('show ivn degree', False)
+    st.caption('centrality metrics')
+    show_degree = st.checkbox('show nodes degree', True)
+    show_gb = st.checkbox('show nodes global degree', True,
+    help = f'''
+    The global degree is the degree of the nodes in the entire database
+    ''')
+    show_iterated_degree = st.checkbox('show ivnd score', False)
+    show_betweenness = st.checkbox('show betweenness centrality', False)
+    show_closeness = st.checkbox('show closeness centrality', False)
+    show_eigencentral = st.checkbox('show eigenvector centrality', False)
 
-chiavi = list(main_data['users_info'][users_list[0]].keys())
-chiavi_b = {}
-start_true = ["full_name", "biography", "followers_count", "following_count", "media_count", "is_private"]
-for k in chiavi:
-    if k in start_true:
-        chiavi_b[k] = st.sidebar.checkbox(f"show {k}", True)
-    else:
-        chiavi_b[k] = st.sidebar.checkbox(f"show {k}", False)
+    st.caption('users info')
+    chiavi = list(main_data['users_info'][users_list[0]].keys())
+    chiavi_b = {}
+    start_true = ["full_name", "biography", "followers_count", "following_count", "media_count", "is_private"]
+    for k in chiavi:
+        if k in start_true:
+            chiavi_b[k] = st.checkbox(f"show {k}", True)
+        else:
+            chiavi_b[k] = st.checkbox(f"show {k}", False)
 
 
 
@@ -1036,13 +1072,41 @@ if bosses:
     G.add_nodes_from(list(set(nodes + list(G.nodes()))))
 
     nnodes = G.number_of_nodes()
+    #scale_factor *= nnodes
 
     degrees = dict(G.degree)
     global_degrees = st.session_state.global_degree
 
-    if (scale_nodes == 'scale nodes by voting degree') or show_iterated_degree:
+    if (scale_nodes == 'ivnd score') or show_iterated_degree:
         ivn_degree = iterated_degree_voting_normalized(nodes, nodes, edges, iter=voting_iterations)
+        den_ivn = sum(ivn_degree.values())
 
+    if (scale_nodes == 'betweenness centrality') or show_betweenness:
+        betweenness = nx.betweenness_centrality(G)
+
+    if (scale_nodes == 'closeness centrality') or show_closeness:
+        closeness = nx.closeness_centrality(G)
+
+    if (scale_nodes == 'eigenvector centrality') or show_eigencentral:
+        eigecentral = nx.eigenvector_centrality(G)
+
+
+    if scale_nodes == 'degree':
+        den = sum(degrees.values())
+    elif scale_nodes == 'ivnd score':
+        den = den_ivn
+    elif scale_nodes == 'betweenness centrality':
+        den = sum(betweenness.values())
+    elif scale_nodes == 'closeness centrality':
+        den = sum(closeness.values())
+    elif scale_nodes == 'eigenvector centrality':
+        den = sum(eigecentral.values())
+    else:
+        den = nnodes
+
+
+
+    scale_factor = scale_factor/den
 
     for node in G.nodes():
         label = node
@@ -1055,7 +1119,16 @@ if bosses:
             title += f" \n global degree : {global_degrees[node]}"
 
         if show_iterated_degree:
-            title += f" \n ivnd score : {np.round(ivn_degree[node]* nnodes , 3)}"
+            title += f" \n ivnd score : {np.round(nnodes*ivn_degree[node]/den_ivn , 3)}"
+
+        if show_betweenness:
+            title += f" \n betweenness centrality : {np.round(betweenness[node] , 3)}"
+
+        if show_closeness:
+            title += f" \n closeness centrality : {np.round(closeness[node] , 3)}"
+
+        if show_eigencentral:
+            title += f" \n eigenvector centrality : {np.round(eigecentral[node] , 3)}"
 
 
         if node in main_data["users_info"]:
@@ -1067,10 +1140,16 @@ if bosses:
         
         G.nodes[node]["label"] = label
         G.nodes[node]["title"] = title
-        if scale_nodes == 'scale nodes by degree':   #'scale nodes by degree', 'scale nodes by voting degree'
-            G.nodes[node]['size'] = int(degrees[node] * scale_degree)
-        elif scale_nodes == 'scale nodes by voting degree':
-            G.nodes[node]['size'] = int(ivn_degree[node] * nnodes * scale_degree)
+        if scale_nodes == 'degree':   #'scale nodes by degree', 'scale nodes by voting degree'
+            G.nodes[node]['size'] = int(degrees[node] * scale_factor)
+        elif scale_nodes == 'ivnd score':
+            G.nodes[node]['size'] = int(ivn_degree[node] * scale_factor)
+        elif scale_nodes == 'betweenness centrality':
+            G.nodes[node]['size'] = int(betweenness[node] * scale_factor)
+        elif scale_nodes == 'closeness centrality':
+            G.nodes[node]['size'] = int(closeness[node] * scale_factor)
+        elif scale_nodes == 'eigenvector centrality':
+            G.nodes[node]['size'] = int(eigecentral[node] * scale_factor)
         else:
             G.nodes[node]['size'] = node_size
 
