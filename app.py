@@ -365,7 +365,7 @@ from the IG social. If You want to be scraped, please go to IG and follow the us
 This project is written in python, using the library instagrapi to gather the data, 
 streamlit to build the web dashboard, networkx to make graph analysis and pyvis to have
 the interactive graph dispalyer.
-Both data and code are published on Github.
+Both data and code are published on [Github](https://github.com/Fede-Rausa/Instaronno/tree/main).
 
 ## help
 In the sidebar, You have the main controls of the graph. They should be monkeyproof,
