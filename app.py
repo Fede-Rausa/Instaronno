@@ -363,7 +363,7 @@ if show_help:
 Welcome to Instaronno! 
 The biggest database about the groups of Instagram users in the worderful Saronno city.
 Here You can apply graph theory to some of the users whose data we have gathered
-from the IG social. If You want to be scraped, please go to IG and follow the user lupinrosa.
+from the IG social. If You want to be scraped, please go to IG and follow the user (not available yet).
 This project is written in python, using the library instagrapi to gather the data, 
 streamlit to build the web dashboard, networkx to make graph analysis and pyvis to have
 the interactive graph dispalyer.
