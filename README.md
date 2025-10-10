@@ -6,7 +6,7 @@ The streamlit application lets play with graph theory.
 It is also a demonstration for a simple 
 node centrality measure / score I have invented, that I call IVND score
 
-## ivnd algothm
+## ivnd algorithm
 
 ivnd (iterated voting normalized degree) scoring algorithm:
 
