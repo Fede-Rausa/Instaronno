@@ -1,0 +1,10 @@
+pandas
+numpy
+scipy
+streamlit
+networkx
+pyvis
+plotly
+requests
+tqdm
+altair<5
