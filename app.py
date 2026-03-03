@@ -94,7 +94,7 @@ def iterated_degree_voting_normalized(users_list, main_users, friends_list, iter
 
 
 st.set_page_config(page_icon = 'instaronno_logo.png')
-st.logo('instaronno_logo.ico', size = 'large')
+st.logo('instaronno_logo.png', size = 'large')
 
 
 # --- Load data ---
