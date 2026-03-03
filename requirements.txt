@@ -7,3 +7,4 @@ pyvis
 plotly
 requests
 tqdm
+altair<5
