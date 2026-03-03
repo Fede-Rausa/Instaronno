@@ -1,10 +1,9 @@
 pandas
 numpy
 scipy
-streamlit
+streamlit>=1.20.0
 networkx
 pyvis
 plotly
 requests
 tqdm
-altair<5
